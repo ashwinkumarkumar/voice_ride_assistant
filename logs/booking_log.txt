@@ -1,0 +1,3 @@
+"""
+Log file for booking history and debugging.
+"""

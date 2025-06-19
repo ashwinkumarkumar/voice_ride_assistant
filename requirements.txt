@@ -1,0 +1,5 @@
+# Python package dependencies for voice_ride_assistant
+flask
+spacy
+transformers
+streamlit

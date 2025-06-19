@@ -1,3 +1,2 @@
-"""
-Initialize the voice_ride_assistant app package.
-"""
+# app/__init__.py
+# Initialize the app package

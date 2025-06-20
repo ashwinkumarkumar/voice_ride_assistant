@@ -1,55 +1,87 @@
-"""
-Streamlit interface for the voice ride assistant.
-Allows user to interact via voice and see ride recommendations.
-"""
-
 import streamlit as st
-from app.voice_input import capture_voice_input
-from app.nlp_parser import parse_ride_details
-from app.fare_simulator import estimate_fares
-from app.recommender import recommend_ride
-from app.tts_response import speak_text
-from app.booking import confirm_booking
+import requests
+
+API_BASE_URL = "http://localhost:5000"
+
+st.set_page_config(page_title="Voice Ride Assistant", page_icon="🚗")
+
+def start_voice_input():
+    try:
+        response = requests.get(f"{API_BASE_URL}/start")
+        if response.status_code == 200:
+            return response.json().get("transcript", "")
+        else:
+            st.error(f"Error starting voice input: {response.json().get('error')}")
+            return ""
+    except Exception as e:
+        st.error(f"Exception: {e}")
+        return ""
+
+def process_ride(text):
+    try:
+        response = requests.post(f"{API_BASE_URL}/process_ride", json={"text": text})
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error(f"Error processing ride: {response.json().get('error')}")
+            return None
+    except Exception as e:
+        st.error(f"Exception: {e}")
+        return None
+
+def confirm_booking(confirmation, ride):
+    try:
+        response = requests.post(f"{API_BASE_URL}/confirm_booking", json={"confirmation": confirmation, "ride": ride})
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error(f"Error confirming booking: {response.json().get('error')}")
+            return None
+    except Exception as e:
+        st.error(f"Exception: {e}")
+        return None
 
 def main():
     st.title("Voice Ride Assistant")
 
-    if st.button("Start Voice Ride Request"):
-        st.info("Please speak your ride request after the prompt.")
-        text = capture_voice_input()
-        if not text:
-            st.error("Could not capture voice input. Please try again.")
-            return
-        st.write(f"Captured Text: {text}")
+    st.markdown(
+        """
+        ### Instructions:
+        Please click 'Start Voice Input' and clearly say your ride request including pickup and drop locations.
+        For example: "Book a ride from Panjagutta to Ameerpet."
+        """
+    )
 
-        ride_details = parse_ride_details(text)
-        if not ride_details:
-            st.error("Could not parse ride details from your input.")
-            return
-        st.write(f"Parsed Ride Details: {ride_details}")
+    if st.button("Start Voice Input"):
+        transcript = start_voice_input()
+        if transcript:
+            st.session_state['transcript'] = transcript
+            st.success(f"Recognized Text: {transcript}")
 
-        fares = estimate_fares(ride_details)
-        st.write(f"Estimated Fares: {fares}")
+    transcript = st.session_state.get('transcript', '')
 
-        recommendation = recommend_ride(fares)
-        st.write(f"Recommended Ride: {recommendation}")
+    if transcript:
+        if st.button("Process Ride Request"):
+            result = process_ride(transcript)
+            if result:
+                st.session_state['ride_details'] = result.get('ride_details')
+                st.session_state['recommendation'] = result.get('recommendation')
+                st.session_state['response_text'] = result.get('response_text')
+                st.success(st.session_state['response_text'])
 
-        response_text = f"Recommended ride is {recommendation['service']} with fare {recommendation['fare']} and time {recommendation['time']} minutes."
-        st.success(response_text)
-        speak_text(response_text)
+    if 'recommendation' in st.session_state:
+        st.write("Recommended Ride Details:")
+        st.json(st.session_state['recommendation'])
 
         if st.button("Confirm Booking"):
-            booking_result = confirm_booking({
-                "service": recommendation['service'],
-                "fare": recommendation['fare'],
-                "time": recommendation['time'],
-                "pickup": ride_details.get("pickup"),
-                "drop": ride_details.get("drop"),
-                "time_requested": ride_details.get("time")
-            })
-            st.write("Booking Confirmed!")
-            st.json(booking_result)
-            speak_text("Your ride has been booked. Thank you!")
+            confirm_result = confirm_booking("yes", st.session_state['recommendation'])
+            if confirm_result:
+                st.success(confirm_result.get('message', 'Booking confirmed'))
+
+        if st.button("Cancel Booking"):
+            cancel_result = confirm_booking("no", st.session_state['recommendation'])
+            if cancel_result:
+                st.info(cancel_result.get('message', 'Booking cancelled'))
 
 if __name__ == "__main__":
     main()

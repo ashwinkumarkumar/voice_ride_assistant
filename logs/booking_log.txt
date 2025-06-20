@@ -1,3 +1,7 @@
 """
 Log file for booking history and debugging.
 """
+{"booking_time": "2025-06-20T11:40:52.013964", "ride": {"service": "Rapido", "fare": 6.16, "time": 19, "pickup": null, "drop": null, "time_requested": "5 pm"}}
+{"booking_time": "2025-06-20T11:47:09.694674", "ride": {"service": "Uber", "fare": 6.26, "time": 18, "pickup": null, "drop": null, "time_requested": "5 pm"}}
+{"booking_time": "2025-06-20T12:52:03.757812", "ride": {"service": "Uber", "fare": 5.49, "time": 10, "pickup": null, "drop": null, "time_requested": null}}
+{"booking_time": "2025-06-20T13:21:08.699544", "ride": {"service": "Rapido", "fare": 7.95, "time": 8, "pickup": null, "drop": null, "time_requested": null}}
